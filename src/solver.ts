@@ -16,6 +16,7 @@ const SCIP_STATUS_MAP: Record<number, SolveStatus> = {
   11: 'restartlimit',
 };
 
+/** Low-level wrapper around the SCIP optimization solver. */
 export class SCIP {
   private module: EmscriptenModule;
   private scipPtr: number;
@@ -26,6 +27,7 @@ export class SCIP {
     this.scipPtr = scipPtr;
   }
 
+  /** Creates a new SCIP solver instance. */
   static async create(options?: SCIPOptions): Promise<SCIP> {
     const module = await loadSCIPModule(options);
 
@@ -51,6 +53,7 @@ export class SCIP {
     }
   }
 
+  /** Reads a problem from a string in the given format (e.g., 'lp', 'mps'). */
   async readProblemFromString(content: string, format: string): Promise<void> {
     this.ensureNotFreed();
 
@@ -73,6 +76,7 @@ export class SCIP {
     }
   }
 
+  /** Solves the loaded problem and returns the result. */
   async solve(): Promise<SolveResult> {
     this.ensureNotFreed();
 
@@ -153,6 +157,7 @@ export class SCIP {
     return solution;
   }
 
+  /** Frees the SCIP instance. Safe to call multiple times. */
   free(): void {
     if (this.freed) {
       return;

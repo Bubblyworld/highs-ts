@@ -1,3 +1,4 @@
+/** Status returned by SCIP after solving a problem. */
 export type SolveStatus =
   | 'optimal'
   | 'infeasible'
@@ -12,15 +13,28 @@ export type SolveStatus =
   | 'restartlimit'
   | 'unknown';
 
+/** Result of solving an optimization problem. */
 export interface SolveResult {
   status: SolveStatus;
   objective?: number;
   solution?: Map<string, number>;
 }
 
-export interface SCIPOptions {
+/** Console output configuration for the SCIP module. */
+export interface SCIPConsoleOptions {
+  /** Handler for stdout messages. Set to null to suppress. */
+  log?: ((text: string) => void) | null;
+  /** Handler for stderr messages. Set to null to suppress. */
+  error?: ((text: string) => void) | null;
 }
 
+/** Options for SCIP instance creation. */
+export interface SCIPOptions {
+  /** Configure console output handling. */
+  console?: SCIPConsoleOptions;
+}
+
+/** The Emscripten module interface exposed by the compiled SCIP WebAssembly. */
 export interface EmscriptenModule {
   ccall: (
     name: string,
@@ -47,4 +61,7 @@ export interface EmscriptenModule {
   };
 }
 
-export type SCIPModuleFactory = () => Promise<EmscriptenModule>;
+/** Factory function that creates the Emscripten SCIP module. */
+export type SCIPModuleFactory = (
+  options?: Record<string, unknown>
+) => Promise<EmscriptenModule>;

@@ -1,7 +1,7 @@
 {
   "name": "scip-ts",
   "version": "0.0.1",
-  "description": "A pure wasm build of the SCIP constraint solver (scipopt.org) with a convenient typescript interface.",
+  "description": "A wasm build of the SCIP (scipopt.org) and HiGHS (highs.dev) MILP solvers with a convenient typescript interface. Runs with zero dependencies in both node and web environments.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,6 +28,7 @@
   },
   "keywords": [
     "scip",
+    "highs",
     "constraint",
     "optimise",
     "lp",

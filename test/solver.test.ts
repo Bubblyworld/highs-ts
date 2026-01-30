@@ -21,17 +21,17 @@ describe('SCIP', () => {
   });
 
   it('should create a SCIP instance', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     expect(scip).toBeDefined();
   });
 
   it('should read a problem from file', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     await expect(scip.readProblem(examplePath('simple'))).resolves.not.toThrow();
   });
 
   it('should solve a simple LP problem', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     await scip.readProblem(examplePath('simple'));
     const result = await scip.solve();
 
@@ -43,7 +43,7 @@ describe('SCIP', () => {
   });
 
   it('should detect infeasible problems', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     await scip.readProblem(examplePath('infeasible'));
     const result = await scip.solve();
 
@@ -53,7 +53,7 @@ describe('SCIP', () => {
   });
 
   it('should solve a travelling salesman problem', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     await scip.readProblem(examplePath('tsp'));
     const result = await scip.solve();
 
@@ -62,7 +62,7 @@ describe('SCIP', () => {
   });
 
   it('should solve a bin packing problem', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     await scip.readProblem(examplePath('binpacking'));
     const result = await scip.solve();
 
@@ -71,7 +71,7 @@ describe('SCIP', () => {
   });
 
   it('should solve a mixed-integer problem', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     await scip.readProblem(examplePath('milp'));
     const result = await scip.solve();
 
@@ -84,7 +84,7 @@ describe('SCIP', () => {
   });
 
   it('should throw when using a freed instance', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     scip.free();
 
     await expect(scip.readProblem(examplePath('simple')))
@@ -94,7 +94,7 @@ describe('SCIP', () => {
   });
 
   it('should handle multiple free calls gracefully', async () => {
-    scip = await SCIP.create();
+    scip = await SCIP.create({ console: { log: null, error: null } });
     scip.free();
     expect(() => scip!.free()).not.toThrow();
     scip = null;
