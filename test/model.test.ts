@@ -173,7 +173,7 @@ describe('Model', () => {
 
   });
 
-  describe('toLPFormat', () => {
+  describe('print', () => {
     it('should generate valid LP format', () => {
       const model = new Model();
       const x = model.numVar(0, 10, 'x');
@@ -182,7 +182,7 @@ describe('Model', () => {
       model.addConstraint(x.plus(y).leq(10), 'c1');
       model.maximize(x.plus(y.times(2)));
 
-      const lp = model.toLPFormat();
+      const lp = model.print();
 
       expect(lp).toContain('Maximize');
       expect(lp).toContain('obj:');
@@ -199,7 +199,7 @@ describe('Model', () => {
       model.addConstraint(x.leq(5));
       model.maximize(x);
 
-      const lp = model.toLPFormat();
+      const lp = model.print();
 
       expect(lp).toContain('General');
       expect(lp).toContain('x');
@@ -212,7 +212,7 @@ describe('Model', () => {
       model.addConstraint(x.leq(1));
       model.maximize(x);
 
-      const lp = model.toLPFormat();
+      const lp = model.print();
 
       expect(lp).toContain('Binary');
       expect(lp).toContain('x');
@@ -242,7 +242,7 @@ describe('Model', () => {
       model.addConstraint(x.leq(5));
       model.addConstraint(x.geq(0));
 
-      const lp = model.toLPFormat();
+      const lp = model.print();
 
       expect(lp).toContain('c0:');
       expect(lp).toContain('c1:');
@@ -282,11 +282,11 @@ describe('Model', () => {
       model.addConstraint(x.leq(5), 'c2');
       model.maximize(x.plus(y.times(2)));
 
-      const lp = model.toLPFormat();
+      const lp = model.print();
 
       const scip = await SCIP.create({ console: { log: null, error: null } });
       try {
-        await scip.readProblemFromString(lp, 'lp');
+        await scip.parse(lp, 'lp');
         const result = await scip.solve();
 
         expect(result.status).toBe('optimal');

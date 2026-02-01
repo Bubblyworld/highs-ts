@@ -53,8 +53,8 @@ export class SCIP {
     }
   }
 
-  /** Reads a problem from a string in the given format (e.g., 'lp', 'mps'). */
-  async readProblemFromString(content: string, format: string): Promise<void> {
+  /** Parses a problem from a string in the given format (e.g., 'lp', 'mps'). */
+  async parse(content: string, format: string): Promise<void> {
     this.ensureNotFreed();
 
     const filename = `/tmp/problem.${format}`;

@@ -58,8 +58,8 @@ export class Model {
     this.sense = 'maximize';
   }
 
-  /** Converts the model to CPLEX LP format. */
-  toLPFormat(): string {
+  /** Prints the model in CPLEX LP format. */
+  print(): string {
     return toLPFormat({
       objective: this.objective,
       sense: this.sense,
@@ -70,10 +70,10 @@ export class Model {
 
   /** Solves the model and returns the solution. */
   async solve(options?: SCIPOptions): Promise<Solution> {
-    const lpString = this.toLPFormat();
+    const lpString = this.print();
     const scip = await BaseSCIP.create(options);
     try {
-      await scip.readProblemFromString(lpString, 'lp');
+      await scip.parse(lpString, 'lp');
       const result = await scip.solve();
       return new Solution(result);
     } finally {

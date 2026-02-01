@@ -19,7 +19,7 @@ export class SCIP extends BaseSCIP {
   async readProblem(path: string): Promise<void> {
     const content = readFileSync(path, 'utf-8');
     const ext = path.split('.').pop() || 'lp';
-    await this.readProblemFromString(content, ext);
+    await this.parse(content, ext);
   }
 
   static override async create(options?: SCIPOptions): Promise<SCIP> {

@@ -22,7 +22,7 @@ End
 `;
 
 const scip = await SCIP.create();
-await scip.readProblemFromString(lp, 'lp');
+await scip.parse(lp, 'lp');
 const result = await scip.solve();
 
 console.log(result.status);     // 'optimal'

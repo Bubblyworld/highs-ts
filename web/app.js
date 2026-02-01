@@ -56,7 +56,7 @@ async function runSolver() {
       },
     });
 
-    await scip.readProblemFromString(currentProblem, 'lp');
+    await scip.parse(currentProblem, 'lp');
     const result = await scip.solve();
 
     resultStatus.textContent = result.status;
