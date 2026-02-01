@@ -5,6 +5,9 @@ import { LinExpr } from './expr.js';
 import { Constraint } from './constraint.js';
 import { Solution } from './solution.js';
 import { toLPFormat } from './lp-format.js';
+import { toMPSFormat } from './mps-format.js';
+
+export type ModelFormat = 'lp' | 'mps';
 
 /** High-level model builder for optimization problems. */
 export class Model {
@@ -58,14 +61,15 @@ export class Model {
     this.sense = 'maximize';
   }
 
-  /** Prints the model in CPLEX LP format. */
-  print(): string {
-    return toLPFormat({
+  /** Prints the model in the specified format (defaults to LP). */
+  print(format: ModelFormat = 'lp'): string {
+    const input = {
       objective: this.objective,
       sense: this.sense,
       constraints: this.constraints,
       variables: this.variables,
-    });
+    };
+    return format === 'mps' ? toMPSFormat(input) : toLPFormat(input);
   }
 
   /** Solves the model and returns the solution. */

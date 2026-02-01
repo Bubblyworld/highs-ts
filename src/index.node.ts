@@ -11,7 +11,7 @@ export {
   Solution,
   sum,
 } from './model/index.js';
-export type { VarType, Sense, Term } from './model/index.js';
+export type { VarType, Sense, Term, ModelFormat } from './model/index.js';
 
 /** SCIP solver with Node.js-specific file reading support. */
 export class SCIP extends BaseSCIP {

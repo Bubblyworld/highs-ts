@@ -25,8 +25,8 @@ const scip = await SCIP.create();
 await scip.parse(lp, 'lp');
 const result = await scip.solve();
 
-console.log(result.status);     // 'optimal'
-console.log(result.objective);  // 20
+console.log(result.status);     // @expect: result.status === 'optimal'
+console.log(result.objective);  // @expect: result.objective === 20
 console.log(result.solution);   // Map { 'x' => 0, 'y' => 10 }
 
 scip.free();
@@ -53,8 +53,8 @@ model.addConstraint(x.leq(5), 'c2');
 model.maximize(x.plus(y.times(2)));
 
 const solution = await model.solve();
-console.log(solution.status);      // 'optimal'
-console.log(solution.objective);   // 20
+console.log(solution.status);      // @expect: solution.status === 'optimal'
+console.log(solution.objective);   // @expect: solution.objective === 20
 console.log(solution.getValue(x)); // 0
 console.log(solution.getValue(y)); // 10
 ```
@@ -80,7 +80,7 @@ model.maximize(
 );
 
 const solution = await model.solve();
-console.log(solution.objective); // 50
+console.log(solution.objective); // @expect: solution.objective === 50
 ```
 
 ## Configuration

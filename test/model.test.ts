@@ -217,6 +217,53 @@ describe('Model', () => {
       expect(lp).toContain('Binary');
       expect(lp).toContain('x');
     });
+
+    it('should generate valid MPS format', () => {
+      const model = new Model();
+      const x = model.numVar(0, 10, 'x');
+      const y = model.numVar(0, 10, 'y');
+
+      model.addConstraint(x.plus(y).leq(10), 'c1');
+      model.maximize(x.plus(y.times(2)));
+
+      const mps = model.print('mps');
+
+      expect(mps).toContain('NAME');
+      expect(mps).toContain('OBJSENSE');
+      expect(mps).toContain('MAX');
+      expect(mps).toContain('ROWS');
+      expect(mps).toContain('N  obj');
+      expect(mps).toContain('L  c1');
+      expect(mps).toContain('COLUMNS');
+      expect(mps).toContain('RHS');
+      expect(mps).toContain('BOUNDS');
+      expect(mps).toContain('ENDATA');
+    });
+
+    it('should include integer markers in MPS format', () => {
+      const model = new Model();
+      const x = model.intVar(0, 10, 'x');
+
+      model.addConstraint(x.leq(5));
+      model.maximize(x);
+
+      const mps = model.print('mps');
+
+      expect(mps).toContain("'INTORG'");
+      expect(mps).toContain("'INTEND'");
+    });
+
+    it('should mark binary variables in MPS format', () => {
+      const model = new Model();
+      const x = model.boolVar('x');
+
+      model.addConstraint(x.leq(1));
+      model.maximize(x);
+
+      const mps = model.print('mps');
+
+      expect(mps).toContain('BV bnd  x');
+    });
   });
 
   describe('auto-generated names', () => {
