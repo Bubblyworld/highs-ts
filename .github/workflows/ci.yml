@@ -17,10 +17,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - uses: mymindstorm/setup-emsdk@v14
+
       - run: npm ci
 
       - run: npx playwright install --with-deps chromium
 
-      - run: npm run build:ts
+      - run: npm run build
 
       - run: npm test
