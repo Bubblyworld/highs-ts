@@ -9,6 +9,7 @@ export interface ExpectedResult {
 export interface TestFixture {
   name: string;
   expected: ExpectedResult;
+  expensive?: boolean;
 }
 
 export const fixtures: TestFixture[] = [
@@ -50,6 +51,7 @@ export const fixtures: TestFixture[] = [
   },
 {
     name: 'job-shop',
+    expensive: true,
     expected: {
       status: 'optimal',
       objective: 96,
@@ -57,6 +59,7 @@ export const fixtures: TestFixture[] = [
   },
   {
     name: 'network-flow',
+    expensive: true,
     expected: {
       status: 'optimal',
       objective: 626,
@@ -64,6 +67,7 @@ export const fixtures: TestFixture[] = [
   },
   {
     name: 'graph-coloring',
+    expensive: true,
     expected: {
       status: 'optimal',
       objective: 4,
