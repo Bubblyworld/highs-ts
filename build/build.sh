@@ -42,9 +42,16 @@ git clone --depth 1 --branch "${SCIP_VERSION}" https://github.com/scipopt/scip.g
 cd scip
 SCIP_DIR=$(pwd -P)
 
-echo "Cloning HiGHS..."
+HIGHS_VERSION="v1.13.0"
+
+echo "Cloning HiGHS ${HIGHS_VERSION}..."
 mkdir -p extern
-git clone --depth 1 https://github.com/ERGO-Code/HiGHS.git extern/HiGHS
+git clone --depth 1 --branch "${HIGHS_VERSION}" https://github.com/ERGO-Code/HiGHS.git extern/HiGHS
+
+echo "Patching HiGHS negative-zero bug..."
+cd extern/HiGHS
+git apply "$ORIGINAL_DIR/patches/highs-signbit.patch"
+cd ../..
 
 echo "Building HiGHS for WASM..."
 mkdir -p build-highs-wasm
