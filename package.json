@@ -1,7 +1,7 @@
 {
-  "name": "@bubblyworld/scip-ts",
-  "version": "0.0.3",
-  "description": "A wasm build of the SCIP (scipopt.org) and HiGHS (highs.dev) MILP solvers with a convenient typescript interface. Runs with zero dependencies in both node and web environments.",
+  "name": "@bubblyworld/highs-ts",
+  "version": "0.0.0",
+  "description": "A wasm build of the HiGHS (highs.dev) MILP solver with a convenient typescript interface. Runs with zero dependencies in both node and web environments.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,8 +18,8 @@
   },
   "files": [
     "dist/",
-    "build/scip.js",
-    "build/scip.wasm"
+    "build/highs.js",
+    "build/highs.wasm"
   ],
   "scripts": {
     "build": "npm run build:wasm && npm run build:ts",
@@ -33,7 +33,6 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "scip",
     "highs",
     "constraint",
     "optimise",
@@ -42,10 +41,10 @@
     "milp"
   ],
   "author": "Guy Paterson-Jones",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bubblyworld/scip-ts.git"
+    "url": "git+https://github.com/Bubblyworld/highs-ts.git"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

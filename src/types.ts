@@ -1,16 +1,15 @@
-/** Status returned by SCIP after solving a problem. */
+/** Status returned by HiGHS after solving a problem. */
 export type SolveStatus =
   | 'optimal'
   | 'infeasible'
   | 'unbounded'
-  | 'inforunbd'
+  | 'unboundedorinfeasible'
   | 'timelimit'
-  | 'nodelimit'
-  | 'stallnodelimit'
-  | 'gaplimit'
-  | 'sollimit'
-  | 'bestsollimit'
-  | 'restartlimit'
+  | 'iterationlimit'
+  | 'solutionlimit'
+  | 'objectivebound'
+  | 'objectivetarget'
+  | 'error'
   | 'unknown';
 
 /** Result of solving an optimization problem. */
@@ -20,21 +19,21 @@ export interface SolveResult {
   solution?: Map<string, number>;
 }
 
-/** Console output configuration for the SCIP module. */
-export interface SCIPConsoleOptions {
+/** Console output configuration for the HiGHS module. */
+export interface ConsoleOptions {
   /** Handler for stdout messages. Set to null to suppress. */
   log?: ((text: string) => void) | null;
   /** Handler for stderr messages. Set to null to suppress. */
   error?: ((text: string) => void) | null;
 }
 
-/** Options for SCIP instance creation. */
-export interface SCIPOptions {
+/** Options for HiGHS instance creation. */
+export interface SolverOptions {
   /** Configure console output handling. */
-  console?: SCIPConsoleOptions;
+  console?: ConsoleOptions;
 }
 
-/** The Emscripten module interface exposed by the compiled SCIP WebAssembly. */
+/** The Emscripten module interface exposed by the compiled HiGHS WebAssembly. */
 export interface EmscriptenModule {
   ccall: (
     name: string,
@@ -61,7 +60,7 @@ export interface EmscriptenModule {
   };
 }
 
-/** Factory function that creates the Emscripten SCIP module. */
-export type SCIPModuleFactory = (
+/** Factory function that creates the Emscripten HiGHS module. */
+export type HiGHSModuleFactory = (
   options?: Record<string, unknown>
 ) => Promise<EmscriptenModule>;

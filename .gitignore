@@ -1,6 +1,6 @@
 node_modules/
 dist/
-build/scip.js
-build/scip.wasm
+build/highs.js
+build/highs.wasm
 *.tsbuildinfo
 test-results

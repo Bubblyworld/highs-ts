@@ -1,4 +1,4 @@
-import { SCIP } from '/dist/index.browser.js';
+import { HiGHS } from '/dist/index.browser.js';
 
 const exampleSelect = document.getElementById('example-select');
 const runButton = document.getElementById('run-button');
@@ -49,15 +49,15 @@ async function runSolver() {
   resultStatus.textContent = 'Running...';
 
   try {
-    const scip = await SCIP.create({
+    const highs = await HiGHS.create({
       console: {
         log: (msg) => appendConsole(msg),
         error: (msg) => appendConsole(`[ERROR] ${msg}`),
       },
     });
 
-    await scip.parse(currentProblem, 'lp');
-    const result = await scip.solve();
+    await highs.parse(currentProblem, 'lp');
+    const result = await highs.solve();
 
     resultStatus.textContent = result.status;
 
@@ -77,7 +77,7 @@ async function runSolver() {
       resultSolution.textContent = '-';
     }
 
-    scip.free();
+    highs.free();
   } catch (err) {
     resultStatus.textContent = 'error';
     appendConsole(`Error: ${err}`);

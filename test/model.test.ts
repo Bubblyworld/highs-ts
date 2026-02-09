@@ -319,7 +319,7 @@ describe('Model', () => {
     });
 
     it('generated LP should be readable by low-level API', async () => {
-      const { SCIP } = await import('../src/index.node.js');
+      const { HiGHS } = await import('../src/index.node.js');
 
       const model = new Model();
       const x = model.numVar(0, 10, 'x');
@@ -331,20 +331,20 @@ describe('Model', () => {
 
       const lp = model.print();
 
-      const scip = await SCIP.create({ console: { log: null, error: null } });
+      const highs = await HiGHS.create({ console: { log: null, error: null } });
       try {
-        await scip.parse(lp, 'lp');
-        const result = await scip.solve();
+        await highs.parse(lp, 'lp');
+        const result = await highs.solve();
 
         expect(result.status).toBe('optimal');
         expect(result.objective).toBeCloseTo(20, 5);
       } finally {
-        scip.free();
+        highs.free();
       }
     });
 
     it('generated MPS should be readable by low-level API', async () => {
-      const { SCIP } = await import('../src/index.node.js');
+      const { HiGHS } = await import('../src/index.node.js');
 
       const model = new Model();
       const x = model.numVar(0, 10, 'x');
@@ -356,15 +356,15 @@ describe('Model', () => {
 
       const mps = model.print('mps');
 
-      const scip = await SCIP.create({ console: { log: null, error: null } });
+      const highs = await HiGHS.create({ console: { log: null, error: null } });
       try {
-        await scip.parse(mps, 'mps');
-        const result = await scip.solve();
+        await highs.parse(mps, 'mps');
+        const result = await highs.solve();
 
         expect(result.status).toBe('optimal');
         expect(result.objective).toBeCloseTo(20, 5);
       } finally {
-        scip.free();
+        highs.free();
       }
     });
   });

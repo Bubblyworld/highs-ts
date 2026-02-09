@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { SCIP } from '../src/index.node.js';
+import { HiGHS } from '../src/index.node.js';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { fixtures } from './fixtures.js';
@@ -11,52 +11,52 @@ function examplePath(name: string): string {
   return join(__dirname, '..', 'examples', `${name}.lp`);
 }
 
-describe('SCIP', () => {
-  let scip: SCIP | null = null;
+describe('HiGHS', () => {
+  let highs: HiGHS | null = null;
 
   afterEach(() => {
-    if (scip) {
-      scip.free();
-      scip = null;
+    if (highs) {
+      highs.free();
+      highs = null;
     }
   });
 
   describe('instance lifecycle', () => {
-    it('should create a SCIP instance', async () => {
-      scip = await SCIP.create({ console: { log: null, error: null } });
-      expect(scip).toBeDefined();
+    it('should create a HiGHS instance', async () => {
+      highs = await HiGHS.create({ console: { log: null, error: null } });
+      expect(highs).toBeDefined();
     });
 
     it('should read a problem from file', async () => {
-      scip = await SCIP.create({ console: { log: null, error: null } });
-      await expect(scip.readProblem(examplePath('simple'))).resolves.not.toThrow();
+      highs = await HiGHS.create({ console: { log: null, error: null } });
+      await expect(highs.readProblem(examplePath('simple'))).resolves.not.toThrow();
     });
 
     it('should throw when using a freed instance', async () => {
-      scip = await SCIP.create({ console: { log: null, error: null } });
-      scip.free();
+      highs = await HiGHS.create({ console: { log: null, error: null } });
+      highs.free();
 
-      await expect(scip.readProblem(examplePath('simple'))).rejects.toThrow(
-        'SCIP instance has been freed'
+      await expect(highs.readProblem(examplePath('simple'))).rejects.toThrow(
+        'HiGHS instance has been freed'
       );
 
-      scip = null;
+      highs = null;
     });
 
     it('should handle multiple free calls gracefully', async () => {
-      scip = await SCIP.create({ console: { log: null, error: null } });
-      scip.free();
-      expect(() => scip!.free()).not.toThrow();
-      scip = null;
+      highs = await HiGHS.create({ console: { log: null, error: null } });
+      highs.free();
+      expect(() => highs!.free()).not.toThrow();
+      highs = null;
     });
   });
 
   describe('solving examples', () => {
     for (const fixture of fixtures) {
       it(`should solve ${fixture.name}`, async () => {
-        scip = await SCIP.create({ console: { log: null, error: null } });
-        await scip.readProblem(examplePath(fixture.name));
-        const result = await scip.solve();
+        highs = await HiGHS.create({ console: { log: null, error: null } });
+        await highs.readProblem(examplePath(fixture.name));
+        const result = await highs.solve();
 
         expect(result.status).toBe(fixture.expected.status);
 

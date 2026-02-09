@@ -13,20 +13,20 @@ describe('README code examples', () => {
 
   for (const [index, block] of codeBlocks.entries()) {
     it(`code block ${index + 1} should run and pass expectations`, async () => {
-      const { SCIP, Model, sum } = await import('../src/index.node.js');
+      const { HiGHS, Model, sum } = await import('../src/index.node.js');
 
       const code = prepareCode(block);
       const expectations = extractExpectations(block);
 
       const varNames = new Set<string>();
       for (const exp of expectations) {
-        const matches = exp.match(/\b(result|solution|scip|model)\b/g);
+        const matches = exp.match(/\b(result|solution|highs|model)\b/g);
         if (matches) matches.forEach(m => varNames.add(m));
       }
 
       const returnVars = Array.from(varNames).join(', ');
       const asyncFn = new Function(
-        'SCIP',
+        'HiGHS',
         'Model',
         'sum',
         'console',
@@ -36,7 +36,7 @@ describe('README code examples', () => {
         })()`
       );
 
-      const vars = await asyncFn(SCIP, Model, sum, {
+      const vars = await asyncFn(HiGHS, Model, sum, {
         log: () => {},
         error: () => {},
       });

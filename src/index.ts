@@ -1,5 +1,5 @@
-export { SCIP } from './solver.js';
-export type { SCIPOptions, SolveResult, SolveStatus } from './types.js';
+export { HiGHS } from './solver.js';
+export type { SolverOptions, SolveResult, SolveStatus } from './types.js';
 export {
   Model,
   Var,

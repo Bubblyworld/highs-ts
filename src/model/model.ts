@@ -1,5 +1,5 @@
-import { SCIP as BaseSCIP } from '../solver.js';
-import type { SCIPOptions } from '../types.js';
+import { HiGHS as BaseHiGHS } from '../solver.js';
+import type { SolverOptions } from '../types.js';
 import { Var } from './var.js';
 import { LinExpr } from './expr.js';
 import { Constraint } from './constraint.js';
@@ -73,15 +73,15 @@ export class Model {
   }
 
   /** Solves the model and returns the solution. */
-  async solve(options?: SCIPOptions): Promise<Solution> {
+  async solve(options?: SolverOptions): Promise<Solution> {
     const lpString = this.print();
-    const scip = await BaseSCIP.create(options);
+    const highs = await BaseHiGHS.create(options);
     try {
-      await scip.parse(lpString, 'lp');
-      const result = await scip.solve();
+      await highs.parse(lpString, 'lp');
+      const result = await highs.solve();
       return new Solution(result);
     } finally {
-      scip.free();
+      highs.free();
     }
   }
 }

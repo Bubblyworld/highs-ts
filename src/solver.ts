@@ -1,56 +1,50 @@
-import { loadSCIPModule } from './module.js';
-import type { EmscriptenModule, SCIPOptions, SolveResult, SolveStatus } from './types.js';
+import { loadHiGHSModule } from './module.js';
+import type { EmscriptenModule, SolverOptions, SolveResult, SolveStatus } from './types.js';
 
-const SCIP_STATUS_MAP: Record<number, SolveStatus> = {
-  0: 'unknown',
-  1: 'optimal',
-  2: 'infeasible',
-  3: 'unbounded',
-  4: 'inforunbd',
-  5: 'timelimit',
-  6: 'nodelimit',
-  7: 'stallnodelimit',
-  8: 'gaplimit',
-  9: 'sollimit',
-  10: 'bestsollimit',
-  11: 'restartlimit',
+const HIGHS_STATUS_MAP: Record<number, SolveStatus> = {
+  0: 'unknown',               // kNotset
+  1: 'error',                 // kLoadError
+  2: 'error',                 // kModelError
+  3: 'error',                 // kPresolveError
+  4: 'error',                 // kSolveError
+  5: 'error',                 // kPostsolveError
+  6: 'error',                 // kModelEmpty
+  7: 'optimal',               // kOptimal
+  8: 'infeasible',            // kInfeasible
+  9: 'unboundedorinfeasible', // kUnboundedOrInfeasible
+  10: 'unbounded',            // kUnbounded
+  11: 'objectivebound',       // kObjectiveBound
+  12: 'objectivetarget',      // kObjectiveTarget
+  13: 'timelimit',            // kTimeLimit
+  14: 'iterationlimit',       // kIterationLimit
+  15: 'unknown',              // kUnknown
+  16: 'solutionlimit',        // kSolutionLimit
+  17: 'unknown',              // kInterrupt
+  18: 'unknown',              // kMemoryLimit
+  19: 'unknown',              // kHighsInterrupt
 };
 
-/** Low-level wrapper around the SCIP optimization solver. */
-export class SCIP {
+/** Low-level wrapper around the HiGHS optimization solver. */
+export class HiGHS {
   private module: EmscriptenModule;
-  private scipPtr: number;
+  private highsPtr: number;
   private freed = false;
 
-  protected constructor(module: EmscriptenModule, scipPtr: number) {
+  protected constructor(module: EmscriptenModule, highsPtr: number) {
     this.module = module;
-    this.scipPtr = scipPtr;
+    this.highsPtr = highsPtr;
   }
 
-  /** Creates a new SCIP solver instance. */
-  static async create(options?: SCIPOptions): Promise<SCIP> {
-    const module = await loadSCIPModule(options);
+  /** Creates a new HiGHS solver instance. */
+  static async create(options?: SolverOptions): Promise<HiGHS> {
+    const module = await loadHiGHSModule(options);
 
-    const scipPtrPtr = module._malloc(4);
-    try {
-      module.ccall('SCIPcreate', 'number', ['number'], [scipPtrPtr]);
-      const scipPtr = module.getValue(scipPtrPtr, 'i32');
-
-      if (scipPtr === 0) {
-        throw new Error('SCIPcreate failed to create instance');
-      }
-
-      module.ccall(
-        'SCIPincludeDefaultPlugins',
-        'number',
-        ['number'],
-        [scipPtr]
-      );
-
-      return new SCIP(module, scipPtr);
-    } finally {
-      module._free(scipPtrPtr);
+    const highsPtr = module.ccall('Highs_create', 'number', [], []) as number;
+    if (highsPtr === 0) {
+      throw new Error('Highs_create failed to create instance');
     }
+
+    return new HiGHS(module, highsPtr);
   }
 
   /** Parses a problem from a string in the given format (e.g., 'lp', 'mps'). */
@@ -61,12 +55,16 @@ export class SCIP {
     this.module.FS.writeFile(filename, content);
 
     try {
-      this.module.ccall(
-        'SCIPreadProb',
+      const status = this.module.ccall(
+        'Highs_readModel',
         'number',
-        ['number', 'string', 'string'],
-        [this.scipPtr, filename, format]
-      );
+        ['number', 'string'],
+        [this.highsPtr, filename]
+      ) as number;
+
+      if (status !== 0) {
+        throw new Error(`Highs_readModel failed with status ${status}`);
+      }
     } finally {
       try {
         this.module.FS.unlink(filename);
@@ -76,33 +74,33 @@ export class SCIP {
     }
   }
 
-  /** Sets a SCIP parameter by name. Supports boolean, integer, real, and string values. */
+  /** Sets a HiGHS option by name. Supports boolean, integer, real, and string values. */
   setParam(name: string, value: boolean | number | string): void {
     this.ensureNotFreed();
 
     if (typeof value === 'boolean') {
       this.module.ccall(
-        'SCIPsetBoolParam', 'number',
+        'Highs_setBoolOptionValue', 'number',
         ['number', 'string', 'number'],
-        [this.scipPtr, name, value ? 1 : 0],
+        [this.highsPtr, name, value ? 1 : 0],
       );
     } else if (typeof value === 'string') {
       this.module.ccall(
-        'SCIPsetStringParam', 'number',
+        'Highs_setStringOptionValue', 'number',
         ['number', 'string', 'string'],
-        [this.scipPtr, name, value],
+        [this.highsPtr, name, value],
       );
     } else if (Number.isInteger(value)) {
       this.module.ccall(
-        'SCIPsetIntParam', 'number',
+        'Highs_setIntOptionValue', 'number',
         ['number', 'string', 'number'],
-        [this.scipPtr, name, value],
+        [this.highsPtr, name, value],
       );
     } else {
       this.module.ccall(
-        'SCIPsetRealParam', 'number',
+        'Highs_setDoubleOptionValue', 'number',
         ['number', 'string', 'number'],
-        [this.scipPtr, name, value],
+        [this.highsPtr, name, value],
       );
     }
   }
@@ -111,111 +109,90 @@ export class SCIP {
   async solve(): Promise<SolveResult> {
     this.ensureNotFreed();
 
-    this.module.ccall('SCIPsolve', 'number', ['number'], [this.scipPtr]);
+    this.module.ccall('Highs_run', 'number', ['number'], [this.highsPtr]);
 
     const statusCode = this.module.ccall(
-      'SCIPgetStatus',
+      'Highs_getModelStatus',
       'number',
       ['number'],
-      [this.scipPtr]
+      [this.highsPtr]
     ) as number;
-    const status = SCIP_STATUS_MAP[statusCode] ?? 'unknown';
+    const status = HIGHS_STATUS_MAP[statusCode] ?? 'unknown';
 
     const result: SolveResult = { status };
 
-    if (status === 'optimal' || status === 'timelimit' || status === 'gaplimit' ||
-        status === 'sollimit' || status === 'bestsollimit') {
-      const solPtr = this.module.ccall(
-        'SCIPgetBestSol',
+    if (status === 'optimal' || status === 'timelimit' ||
+        status === 'solutionlimit' || status === 'objectivebound' ||
+        status === 'objectivetarget') {
+      result.objective = this.module.ccall(
+        'Highs_getObjectiveValue',
         'number',
         ['number'],
-        [this.scipPtr]
+        [this.highsPtr]
       ) as number;
 
-      if (solPtr !== 0) {
-        result.objective = this.module.ccall(
-          'SCIPgetSolOrigObj',
-          'number',
-          ['number', 'number'],
-          [this.scipPtr, solPtr]
-        ) as number;
-
-        result.solution = this.extractSolution(solPtr);
-      }
+      result.solution = this.extractSolution();
     }
 
     return result;
   }
 
-  private extractSolution(solPtr: number): Map<string, number> {
+  private extractSolution(): Map<string, number> {
     const solution = new Map<string, number>();
 
-    const nVars = this.module.ccall(
-      'SCIPgetNOrigVars',
+    const numCol = this.module.ccall(
+      'Highs_getNumCol',
       'number',
       ['number'],
-      [this.scipPtr]
+      [this.highsPtr]
     ) as number;
 
-    const varsPtr = this.module.ccall(
-      'SCIPgetOrigVars',
-      'number',
-      ['number'],
-      [this.scipPtr]
-    ) as number;
-
-    for (let i = 0; i < nVars; i++) {
-      const varPtr = this.module.getValue(varsPtr + i * 4, 'i32');
-
-      const namePtr = this.module.ccall(
-        'SCIPvarGetName',
+    const colValuePtr = this.module._malloc(numCol * 8);
+    try {
+      this.module.ccall(
+        'Highs_getSolution',
         'number',
-        ['number'],
-        [varPtr]
-      ) as number;
-      const name = this.module.UTF8ToString(namePtr);
+        ['number', 'number', 'number', 'number', 'number'],
+        [this.highsPtr, colValuePtr, 0, 0, 0]
+      );
 
-      const value = this.module.ccall(
-        'SCIPgetSolVal',
-        'number',
-        ['number', 'number', 'number'],
-        [this.scipPtr, solPtr, varPtr]
-      ) as number;
-
-      solution.set(name, value);
+      const nameBufferSize = 256;
+      const namePtr = this.module._malloc(nameBufferSize);
+      try {
+        for (let i = 0; i < numCol; i++) {
+          this.module.ccall(
+            'Highs_getColName',
+            'number',
+            ['number', 'number', 'number'],
+            [this.highsPtr, i, namePtr]
+          );
+          const name = this.module.UTF8ToString(namePtr);
+          const value = this.module.getValue(colValuePtr + i * 8, 'double');
+          solution.set(name, value);
+        }
+      } finally {
+        this.module._free(namePtr);
+      }
+    } finally {
+      this.module._free(colValuePtr);
     }
 
     return solution;
   }
 
-  /** Frees the SCIP instance. Safe to call multiple times. */
+  /** Frees the HiGHS instance. Safe to call multiple times. */
   free(): void {
     if (this.freed) {
       return;
     }
 
     this.freed = true;
-
-    const scipPtrPtr = this.module._malloc(4);
-    try {
-      this.module.setValue(scipPtrPtr, this.scipPtr, 'i32');
-      this.module.ccall('SCIPfree', 'number', ['number'], [scipPtrPtr]);
-    } catch {
-      // SCIPfree can trigger WASM memory access errors in browser environments
-      // during deep recursive deallocation. Since each SCIP instance owns its
-      // own Emscripten module, the memory will be reclaimed by GC regardless.
-    } finally {
-      try {
-        this.module._free(scipPtrPtr);
-      } catch {
-        // Same as above — _free may fail if the WASM state is already corrupted.
-      }
-    }
+    this.module.ccall('Highs_destroy', null, ['number'], [this.highsPtr]);
   }
 
   private ensureNotFreed(): void {
     if (this.freed) {
-      throw new Error('SCIP instance has been freed');
+      throw new Error('HiGHS instance has been freed');
     }
   }
 }

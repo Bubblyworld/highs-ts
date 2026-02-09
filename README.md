@@ -1,19 +1,17 @@
-# scip-ts
+# highs-ts
 
-[![npm version](https://img.shields.io/npm/v/@bubblyworld/scip-ts)](https://www.npmjs.com/package/@bubblyworld/scip-ts)
-[![CI](https://github.com/Bubblyworld/scip-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/Bubblyworld/scip-ts/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![npm version](https://img.shields.io/npm/v/@bubblyworld/highs-ts)](https://www.npmjs.com/package/@bubblyworld/highs-ts)
+[![CI](https://github.com/Bubblyworld/highs-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/Bubblyworld/highs-ts/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-[WASM](https://webassembly.org/) build of the [SCIP](https://scipopt.org) and [HiGHS](https://highs.dev) solvers with TypeScript bindings. Supports linear and mixed-integer linear programming, and runs in both node and browser environments with zero runtime dependencies. Note that the WASM module is ~8mb, so you may want to consider lazy-loading it instead of bundling it into your app.
-
-Several recursive heuristics have been disabled in the browser version as they overwhelm the browser's stack very quickly on non-trivial problem instances. For details see [`src/index.browser.ts`](src/index.browser.ts).
+[WASM](https://webassembly.org/) build of the [HiGHS](https://highs.dev) solver with TypeScript bindings. Supports linear and mixed-integer linear programming, and runs in both node and browser environments with zero runtime dependencies.
 
 ## Basic Usage
 
-The `SCIP` class provides direct access to the solver. Problems can be loaded from strings in [CPLEX LP](https://www.ibm.com/docs/en/icos/22.1.0?topic=cplex-lp-file-format-algebraic-representation) or [MPS](https://en.wikipedia.org/wiki/MPS_(format)) format.
+The `HiGHS` class provides direct access to the solver. Problems can be loaded from strings in [CPLEX LP](https://www.ibm.com/docs/en/icos/22.1.0?topic=cplex-lp-file-format-algebraic-representation) or [MPS](https://en.wikipedia.org/wiki/MPS_(format)) format.
 
 ```typescript
-import { SCIP } from '@bubblyworld/scip-ts';
+import { HiGHS } from '@bubblyworld/highs-ts';
 
 const lp = `
 Maximize
@@ -27,15 +25,15 @@ Bounds
 End
 `;
 
-const scip = await SCIP.create();
-await scip.parse(lp, 'lp');
-const result = await scip.solve();
+const highs = await HiGHS.create();
+await highs.parse(lp, 'lp');
+const result = await highs.solve();
 
 console.log(result.status);     // @expect: result.status === 'optimal'
 console.log(result.objective);  // @expect: result.objective === 20
 console.log(result.solution);   // Map { 'x' => 0, 'y' => 10 }
 
-scip.free();
+highs.free();
 ```
 
 ## High-Level API
@@ -43,7 +41,7 @@ scip.free();
 The `Model` class provides a builder interface for defining problems programmatically.
 
 ```typescript
-import { Model, sum } from '@bubblyworld/scip-ts';
+import { Model, sum } from '@bubblyworld/highs-ts';
 
 const model = new Model();
 
@@ -96,7 +94,7 @@ console.log(solution.objective); // @expect: solution.objective === 50
 By default, solver output is suppressed. To enable progress logging, pass an explicit console configuration:
 
 ```typescript
-const scip = await SCIP.create({
+const highs = await HiGHS.create({
   console: {
     log: (msg) => console.log(msg),
     error: (msg) => console.error(msg)
@@ -138,13 +136,10 @@ npm run serve
 
 ## Licensing
 
-This package is licensed under the Apache 2.0 License. The WASM bundle includes:
+This package is licensed under the MIT License. The WASM bundle includes:
 
-- **SCIP** - Licensed under Apache 2.0 by Zuse Institute Berlin ([license](https://github.com/scipopt/scip/blob/master/LICENSE))
 - **HiGHS** - Licensed under MIT by the HiGHS team ([license](https://github.com/ERGO-Code/HiGHS/blob/master/LICENSE))
-
-Both licenses are permissive and allow commercial use, modification, and distribution.
 
 ## Acknowledgements
 
-The vast majority of the credit here goes to the authors of [SCIP](https://scipopt.org) and [HiGHS](https://highs.dev). I've just packaged them nicely for use in the javascript/typescript world.
+The vast majority of the credit here goes to the authors of [HiGHS](https://highs.dev). I've just packaged it nicely for use in the javascript/typescript world.

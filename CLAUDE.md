@@ -1,6 +1,6 @@
-# scip-ts
+# highs-ts
 
-A wasm build of the SCIP (scipopt.org) and HiGHS (highs.dev) MILP solvers with a convenient typescript interface. The goal is to run with zero dependencies in both node and web environments, and to support a high-level typescript interface for defining, configuring and solving mixed-integer linear programs.
+A wasm build of the HiGHS (highs.dev) MILP solver with a convenient typescript interface. The goal is to run with zero dependencies in both node and web environments, and to support a high-level typescript interface for defining, configuring and solving mixed-integer linear programs.
 
 ## Code Style
 

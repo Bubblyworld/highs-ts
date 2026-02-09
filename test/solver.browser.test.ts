@@ -51,6 +51,6 @@ for (const fixture of fixtures) {
     }
 
     const consoleText = await page.getByTestId('console-output').textContent();
-    expect(consoleText).toContain('SCIP');
+    expect(consoleText).toContain('HiGHS');
   });
 }

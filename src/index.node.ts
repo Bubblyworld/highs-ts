@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
-import { SCIP as BaseSCIP } from './solver.js';
-import type { SCIPOptions } from './types.js';
+import { HiGHS as BaseHiGHS } from './solver.js';
+import type { SolverOptions } from './types.js';
 
-export type { SCIPOptions, SolveResult, SolveStatus } from './types.js';
+export type { SolverOptions, SolveResult, SolveStatus } from './types.js';
 export {
   Model,
   Var,
@@ -13,8 +13,8 @@ export {
 } from './model/index.js';
 export type { VarType, Sense, Term, ModelFormat } from './model/index.js';
 
-/** SCIP solver with Node.js-specific file reading support. */
-export class SCIP extends BaseSCIP {
+/** HiGHS solver with Node.js-specific file reading support. */
+export class HiGHS extends BaseHiGHS {
   /** Reads a problem from a file path. The format is inferred from the extension. */
   async readProblem(path: string): Promise<void> {
     const content = readFileSync(path, 'utf-8');
@@ -22,8 +22,8 @@ export class SCIP extends BaseSCIP {
     await this.parse(content, ext);
   }
 
-  static override async create(options?: SCIPOptions): Promise<SCIP> {
-    const base = await BaseSCIP.create(options);
-    return Object.setPrototypeOf(base, SCIP.prototype) as SCIP;
+  static override async create(options?: SolverOptions): Promise<HiGHS> {
+    const base = await BaseHiGHS.create(options);
+    return Object.setPrototypeOf(base, HiGHS.prototype) as HiGHS;
   }
 }
