@@ -136,9 +136,7 @@ npm run serve
 
 ## Licensing
 
-This package is licensed under the MIT License. The WASM bundle includes:
-
-- **HiGHS** - Licensed under MIT by the HiGHS team ([license](https://github.com/ERGO-Code/HiGHS/blob/master/LICENSE))
+This package is licensed under the MIT License. The WASM bundle includes [HiGHS](https://highs.dev), also licensed under MIT ([license](https://github.com/ERGO-Code/HiGHS/blob/master/LICENSE.txt)).
 
 ## Acknowledgements
 
