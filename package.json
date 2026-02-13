@@ -1,6 +1,6 @@
 {
   "name": "@bubblyworld/highs-ts",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A wasm build of the HiGHS (highs.dev) MILP solver with a convenient typescript interface. Runs with zero dependencies in both node and web environments.",
   "type": "module",
   "main": "./dist/index.js",
