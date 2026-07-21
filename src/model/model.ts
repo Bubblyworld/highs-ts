@@ -453,12 +453,18 @@ export class Model {
     return format === 'mps' ? toMPSFormat(input) : toLPFormat(input);
   }
 
-  /** Solves the model and returns the solution. */
+  /**
+   * Solves the model and returns the solution. The model is passed to the
+   * solver in MPS format rather than LP format, because the LP grammar
+   * reserves characters that are perfectly legal in variable names here
+   * (`+`, `-`, `[`, `]`, `:`, leading digits, ...) and the HiGHS LP reader
+   * aborts on them, whereas MPS accepts any whitespace-free name.
+   */
   async solve(options?: SolverOptions): Promise<Solution> {
-    const lpString = this.print();
+    const mpsString = this.print('mps');
     const highs = await BaseHiGHS.create(options);
     try {
-      await highs.parse(lpString, 'lp');
+      await highs.parse(mpsString, 'mps');
       const result = await highs.solve();
       return new Solution(result);
     } finally {

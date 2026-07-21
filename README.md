@@ -6,6 +6,8 @@
 
 [WASM](https://webassembly.org/) build of the [HiGHS](https://highs.dev) solver with TypeScript bindings. Supports linear and mixed-integer linear programming, and runs in both node and browser environments with zero runtime dependencies.
 
+The solver's emscripten glue is loaded with a plain relative `import()`, so the package works both unbundled (served as native ES modules) and under bundlers like webpack and vite, which statically resolve the import and include the glue and wasm in your bundle.
+
 ## Basic Usage
 
 The `HiGHS` class provides direct access to the solver. Problems can be loaded from strings in [CPLEX LP](https://www.ibm.com/docs/en/icos/22.1.0?topic=cplex-lp-file-format-algebraic-representation) or [MPS](https://en.wikipedia.org/wiki/MPS_(format)) format.
@@ -101,6 +103,8 @@ console.log(solution.objective);   // @expect: solution.objective === 20
 console.log(solution.getValue(x)); // 0
 console.log(solution.getValue(y)); // 10
 ```
+
+Variable and constraint names can be any whitespace-free string. `solve()` hands the model to the solver in MPS format, which — unlike the LP grammar — reserves no characters, so names like `item-cost` or `x[1,2]` are fine. To inspect a model yourself, `model.print()` returns CPLEX LP text and `model.print('mps')` returns MPS.
 
 Expressions support chained arithmetic: `plus()`, `minus()`, `times()`, `neg()`. Constraints are created with `leq()`, `geq()`, and `eq()`. The `sum()` helper combines multiple terms. You can mix and match different kinds of variables and constraints as you like:
 

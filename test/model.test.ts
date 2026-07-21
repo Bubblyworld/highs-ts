@@ -368,4 +368,39 @@ describe('Model', () => {
       }
     });
   });
+
+  describe('solve robustness', () => {
+    it('should solve models whose names use LP-reserved characters', async () => {
+      const model = new Model();
+      const cost = model.numVar(0, 10, 'item-cost');
+      const flow = model.numVar(0, 10, 'x[1,2]');
+      const count = model.intVar(0, 10, '1st-count');
+
+      model.addConstraint(cost.plus(flow).plus(count).leq(15), 'cap:total');
+      model.maximize(cost.plus(flow.times(2)).plus(count.times(3)));
+
+      const solution = await model.solve();
+
+      expect(solution.status).toBe('optimal');
+      expect(solution.objective).toBeCloseTo(40, 5);
+      expect(solution.getValue(count)).toBeCloseTo(10, 5);
+    });
+
+    it('should keep variables with no constraints or objective in the solution', async () => {
+      const model = new Model();
+      const x = model.numVar(0, 10, 'x');
+      const unusedNum = model.numVar(3, 10, 'unused_num');
+      const unusedInt = model.intVar(2, 10, 'unused_int');
+
+      model.addConstraint(x.leq(5));
+      model.maximize(x);
+
+      const solution = await model.solve();
+
+      expect(solution.status).toBe('optimal');
+      expect(solution.getValue(x)).toBeCloseTo(5, 5);
+      expect(solution.getValue(unusedNum)).toBeCloseTo(3, 5);
+      expect(solution.getValue(unusedInt)).toBeCloseTo(2, 5);
+    });
+  });
 });

@@ -70,24 +70,31 @@ export function toMPSFormat(input: MPSFormatInput): string {
   const integerVars = input.variables.filter(v => v.type === 'integer' || v.type === 'binary');
   const continuousVars = input.variables.filter(v => v.type === 'continuous');
 
-  for (const v of continuousVars) {
+  // A variable with no nonzero coefficients would never be mentioned in
+  // COLUMNS and so would not exist in the parsed model; an explicit zero
+  // objective entry keeps it (and its solution value) alive.
+  function pushColumn(v: Var): void {
     const coeffs = varCoeffs.get(v.name)!;
+    let emitted = false;
     for (const [rowName, coeff] of coeffs) {
       if (coeff !== 0) {
         lines.push(`    ${v.name}  ${rowName}  ${coeff}`);
+        emitted = true;
       }
     }
+    if (!emitted) {
+      lines.push(`    ${v.name}  obj  0`);
+    }
+  }
+
+  for (const v of continuousVars) {
+    pushColumn(v);
   }
 
   if (integerVars.length > 0) {
     lines.push("    MARKER    'MARKER'  'INTORG'");
     for (const v of integerVars) {
-      const coeffs = varCoeffs.get(v.name)!;
-      for (const [rowName, coeff] of coeffs) {
-        if (coeff !== 0) {
-          lines.push(`    ${v.name}  ${rowName}  ${coeff}`);
-        }
-      }
+      pushColumn(v);
     }
     lines.push("    MARKER    'MARKER'  'INTEND'");
   }

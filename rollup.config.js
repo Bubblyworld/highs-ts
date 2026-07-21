@@ -1,5 +1,14 @@
 import { defineConfig } from 'rollup';
 
+/**
+ * The emscripten glue must stay a plain relative dynamic import in the dist
+ * output: consumers' bundlers need to see the static specifier to include
+ * the glue (and its wasm) in their bundles, so we must not inline it here.
+ */
+function isExternal(id) {
+  return ['fs', 'path', 'url', 'module'].includes(id) || id.endsWith('build/highs.js');
+}
+
 function cjsImportMetaPlugin() {
   return {
     name: 'cjs-import-meta-url',
@@ -20,7 +29,7 @@ export default defineConfig([
       format: 'es',
       sourcemap: true,
     },
-    external: ['fs', 'path', 'url', 'module'],
+    external: isExternal,
   },
   {
     input: 'dist/index.browser.js',
@@ -29,12 +38,12 @@ export default defineConfig([
       format: 'es',
       sourcemap: true,
     },
-    external: ['fs', 'path', 'url', 'module'],
+    external: isExternal,
   },
   {
     input: 'dist/index.node.js',
     output: { file: 'dist/index.node.cjs', format: 'cjs', sourcemap: true },
-    external: ['fs', 'path', 'url', 'module'],
+    external: isExternal,
     plugins: [cjsImportMetaPlugin()],
   },
 ]);

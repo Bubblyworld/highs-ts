@@ -16,9 +16,11 @@ export async function loadHiGHSModule(
 }
 
 async function loadHiGHSFactory(): Promise<HiGHSModuleFactory> {
-  const { default: HiGHSModuleFactory } = await import(
-    new URL('../build/highs.js', import.meta.url).href,
-  );
+  // A static relative specifier keeps this import visible to consumers'
+  // bundlers (webpack, vite, ...), which otherwise fail to include the
+  // emscripten glue in their bundles. Our own rollup pass marks it external
+  // so the specifier survives verbatim in the dist output.
+  const { default: HiGHSModuleFactory } = await import('../build/highs.js');
 
   return HiGHSModuleFactory;
 }
