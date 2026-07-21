@@ -2,7 +2,8 @@ import { readFileSync } from 'fs';
 import { HiGHS as BaseHiGHS } from './solver.js';
 import type { SolverOptions } from './types.js';
 
-export type { SolverOptions, SolveResult, SolveStatus } from './types.js';
+export { HIGHS_INF } from './types.js';
+export type { RawModel, SolverOptions, SolveResult, SolveStatus } from './types.js';
 export {
   Model,
   Var,

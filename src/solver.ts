@@ -1,5 +1,6 @@
 import { loadHiGHSModule } from './module.js';
-import type { EmscriptenModule, SolverOptions, SolveResult, SolveStatus } from './types.js';
+import { HIGHS_INF } from './types.js';
+import type { EmscriptenModule, RawModel, SolverOptions, SolveResult, SolveStatus } from './types.js';
 
 const HIGHS_STATUS_MAP: Record<number, SolveStatus> = {
   0: 'unknown',               // kNotset
@@ -72,6 +73,138 @@ export class HiGHS {
         // Ignore cleanup errors
       }
     }
+  }
+
+  /**
+   * Whether the loaded wasm build exports Highs_passLp/Highs_passMip, i.e.
+   * whether passModel is available. Builds prior to 1.3.0 only support the
+   * text-based parse path.
+   */
+  supportsPassModel(): boolean {
+    const mod = this.module as unknown as Record<string, unknown>;
+    return typeof mod._Highs_passLp === 'function';
+  }
+
+  /**
+   * Passes a problem in raw columnar form directly into solver memory via
+   * Highs_passLp (or Highs_passMip when integrality is given), bypassing text
+   * serialization and parsing entirely. For large models this is dramatically
+   * faster than parse().
+   */
+  passModel(model: RawModel): void {
+    this.ensureNotFreed();
+    if (!this.supportsPassModel()) {
+      throw new Error('This wasm build does not export Highs_passLp — rebuild with 1.3.0+ or use parse()');
+    }
+
+    const { numCol, numRow, matrix } = model;
+    const rowwise = (matrix.format ?? 'row') !== 'col';
+    const numNz = matrix.value.length;
+    const startLen = (rowwise ? numRow : numCol) + 1;
+    if (model.colCost.length !== numCol) {
+      throw new Error(`colCost has ${model.colCost.length} entries, expected numCol = ${numCol}`);
+    }
+    if (matrix.start.length !== startLen) {
+      throw new Error(`matrix.start has ${matrix.start.length} entries, expected ${startLen} for ${rowwise ? 'row' : 'col'}-wise layout`);
+    }
+    if (matrix.index.length !== numNz) {
+      throw new Error(`matrix.index has ${matrix.index.length} entries, expected ${numNz} to match matrix.value`);
+    }
+    if (model.integrality && model.integrality.length !== numCol) {
+      throw new Error(`integrality has ${model.integrality.length} entries, expected numCol = ${numCol}`);
+    }
+
+    const ptrs: number[] = [];
+    const alloc = (bytes: number): number => {
+      const ptr = this.module._malloc(Math.max(1, bytes));
+      ptrs.push(ptr);
+      return ptr;
+    };
+    // Views into wasm memory are created fresh for each copy: a later _malloc
+    // may grow (and replace) the backing buffer, but growth preserves
+    // contents, so copy-then-allocate is safe.
+    const allocF64 = (data: Float64Array | number[] | undefined, len: number, fill: number): number => {
+      const ptr = alloc(len * 8);
+      if (this.module.HEAPF64) {
+        const view = new Float64Array(this.module.HEAPF64.buffer, ptr, len);
+        if (data) view.set(data); else view.fill(fill);
+      } else {
+        for (let i = 0; i < len; i++) this.module.setValue(ptr + i * 8, data ? data[i] : fill, 'double');
+      }
+      return ptr;
+    };
+    const allocI32 = (data: Int32Array | number[], len: number): number => {
+      const ptr = alloc(len * 4);
+      if (this.module.HEAP32) {
+        new Int32Array(this.module.HEAP32.buffer, ptr, len).set(data);
+      } else {
+        for (let i = 0; i < len; i++) this.module.setValue(ptr + i * 4, data[i], 'i32');
+      }
+      return ptr;
+    };
+
+    try {
+      const args = [
+        this.highsPtr, numCol, numRow, numNz,
+        rowwise ? 2 : 1,                          // kHighsMatrixFormatRowwise / Colwise
+        model.sense === 'maximize' ? -1 : 1,      // kHighsObjSenseMaximize / Minimize
+        model.offset ?? 0,
+        allocF64(model.colCost, numCol, 0),
+        allocF64(model.colLower, numCol, 0),
+        allocF64(model.colUpper, numCol, HIGHS_INF),
+        allocF64(model.rowLower, numRow, -HIGHS_INF),
+        allocF64(model.rowUpper, numRow, HIGHS_INF),
+        allocI32(matrix.start, startLen),
+        allocI32(matrix.index, numNz),
+        allocF64(matrix.value, numNz, 0),
+      ];
+      let status: number;
+      if (model.integrality) {
+        args.push(allocI32(model.integrality, numCol));
+        status = this.module.ccall(
+          'Highs_passMip', 'number', new Array(16).fill('number'), args,
+        ) as number;
+      } else {
+        status = this.module.ccall(
+          'Highs_passLp', 'number', new Array(15).fill('number'), args,
+        ) as number;
+      }
+      if (status !== 0) {
+        throw new Error(`Highs_pass${model.integrality ? 'Mip' : 'Lp'} failed with status ${status}`);
+      }
+    } finally {
+      for (const ptr of ptrs) this.module._free(ptr);
+    }
+  }
+
+  /**
+   * Returns the primal solution as a dense array indexed by column. This is
+   * the natural readback for passModel-built problems, where columns have no
+   * names, and avoids the per-column name lookups behind solve()'s Map.
+   */
+  getSolutionValues(): Float64Array {
+    this.ensureNotFreed();
+
+    const numCol = this.module.ccall(
+      'Highs_getNumCol', 'number', ['number'], [this.highsPtr],
+    ) as number;
+    const out = new Float64Array(numCol);
+    const ptr = this.module._malloc(Math.max(1, numCol * 8));
+    try {
+      this.module.ccall(
+        'Highs_getSolution', 'number',
+        ['number', 'number', 'number', 'number', 'number'],
+        [this.highsPtr, ptr, 0, 0, 0],
+      );
+      if (this.module.HEAPF64) {
+        out.set(new Float64Array(this.module.HEAPF64.buffer, ptr, numCol));
+      } else {
+        for (let i = 0; i < numCol; i++) out[i] = this.module.getValue(ptr + i * 8, 'double');
+      }
+    } finally {
+      this.module._free(ptr);
+    }
+    return out;
   }
 
   /** Sets a HiGHS option by name. Supports boolean, integer, real, and string values. */
@@ -160,13 +293,15 @@ export class HiGHS {
       const namePtr = this.module._malloc(nameBufferSize);
       try {
         for (let i = 0; i < numCol; i++) {
-          this.module.ccall(
+          const nameStatus = this.module.ccall(
             'Highs_getColName',
             'number',
             ['number', 'number', 'number'],
             [this.highsPtr, i, namePtr]
-          );
-          const name = this.module.UTF8ToString(namePtr);
+          ) as number;
+          // Models passed via passModel have unnamed columns; fall back to a
+          // positional name rather than decoding an untouched buffer.
+          const name = nameStatus === 0 ? this.module.UTF8ToString(namePtr) : `col${i}`;
           const value = this.module.getValue(colValuePtr + i * 8, 'double');
           solution.set(name, value);
         }

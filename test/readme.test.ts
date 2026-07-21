@@ -20,7 +20,7 @@ describe('README code examples', () => {
 
       const varNames = new Set<string>();
       for (const exp of expectations) {
-        const matches = exp.match(/\b(result|solution|highs|model)\b/g);
+        const matches = exp.match(/\b(result|solution|highs|model|values)\b/g);
         if (matches) matches.forEach(m => varNames.add(m));
       }
 

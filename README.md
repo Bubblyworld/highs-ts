@@ -36,6 +36,45 @@ console.log(result.solution);   // Map { 'x' => 0, 'y' => 10 }
 highs.free();
 ```
 
+## Raw Columnar Input
+
+For large models, serializing to LP/MPS text and parsing it back becomes the
+dominant cost. `passModel` skips both: it copies typed arrays straight into
+solver memory via `Highs_passLp` (or `Highs_passMip` when `integrality` is
+given). The constraint matrix is sparse, row-wise by default, and bounds
+default to `0 <= x < +inf` for columns and `-inf < row < +inf` for rows —
+pass `HIGHS_INF` explicitly where you need it. `getSolutionValues` reads the
+solution back densely by column index, which is the natural pairing since
+raw columns have no names.
+
+```typescript
+import { HiGHS } from '@bubblyworld/highs-ts';
+
+// The same problem as above, in columnar form.
+const highs = await HiGHS.create();
+highs.passModel({
+  numCol: 2,
+  numRow: 2,
+  sense: 'maximize',
+  colCost: Float64Array.from([1, 2]),
+  colUpper: Float64Array.from([10, 10]),
+  rowUpper: Float64Array.from([10, 5]),
+  matrix: {
+    start: Int32Array.from([0, 2, 3]),
+    index: Int32Array.from([0, 1, 0]),
+    value: Float64Array.from([1, 1, 1]),
+  },
+});
+const result = await highs.solve();
+const values = highs.getSolutionValues();
+
+console.log(result.status);     // @expect: result.status === 'optimal'
+console.log(result.objective);  // @expect: result.objective === 20
+console.log(values[1]);         // @expect: values[1] === 10
+
+highs.free();
+```
+
 ## High-Level API
 
 The `Model` class provides a builder interface for defining problems programmatically.

@@ -1,5 +1,6 @@
 export { HiGHS } from './solver.js';
-export type { SolverOptions, SolveResult, SolveStatus } from './types.js';
+export { HIGHS_INF } from './types.js';
+export type { RawModel, SolverOptions, SolveResult, SolveStatus } from './types.js';
 export {
   Model,
   Var,

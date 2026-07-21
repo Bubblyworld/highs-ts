@@ -69,8 +69,8 @@ cat > main.c << 'EOF'
 int main() { return 0; }
 EOF
 
-EXPORTED_FUNCTIONS="_Highs_create,_Highs_destroy,_Highs_readModel,_Highs_run,_Highs_getModelStatus,_Highs_getObjectiveValue,_Highs_getNumCol,_Highs_getSolution,_Highs_getColName,_Highs_setBoolOptionValue,_Highs_setIntOptionValue,_Highs_setDoubleOptionValue,_Highs_setStringOptionValue,_malloc,_free,_main"
-EXPORTED_RUNTIME_METHODS="ccall,cwrap,getValue,setValue,UTF8ToString,stringToUTF8,FS,HEAP8,HEAPU8,HEAP32"
+EXPORTED_FUNCTIONS="_Highs_create,_Highs_destroy,_Highs_readModel,_Highs_run,_Highs_getModelStatus,_Highs_getObjectiveValue,_Highs_getNumCol,_Highs_getNumRow,_Highs_getSolution,_Highs_getColName,_Highs_passLp,_Highs_passMip,_Highs_setBoolOptionValue,_Highs_setIntOptionValue,_Highs_setDoubleOptionValue,_Highs_setStringOptionValue,_malloc,_free,_main"
+EXPORTED_RUNTIME_METHODS="ccall,cwrap,getValue,setValue,UTF8ToString,stringToUTF8,FS,HEAP8,HEAPU8,HEAP32,HEAPF64"
 
 emcc main.c \
     -O1 \
