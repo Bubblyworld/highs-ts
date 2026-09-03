@@ -171,6 +171,46 @@ describe('Model', () => {
       expect(solution.getValue(x)).toBeCloseTo(7, 5);
     });
 
+    it('sum() should accept an array and match the spread form', () => {
+      const model = new Model();
+      const x = model.numVar(0, 10, 'x');
+      const y = model.numVar(0, 10, 'y');
+      const items = [x, y.times(2.5), 7, x.times(-1).plus(3)];
+
+      const spread = sum(...items);
+      const array = sum(items);
+
+      expect(array.constant).toBe(spread.constant);
+      expect(array.terms).toEqual(spread.terms);
+      expect(sum([]).terms).toEqual([]);
+      expect(sum([]).constant).toBe(0);
+    });
+
+    it('sum() should handle hundreds of thousands of terms', () => {
+      const model = new Model();
+      const x = model.numVar(0, 10, 'x');
+      const items = Array.from({ length: 300_000 }, () => x);
+
+      expect(sum(items).terms).toHaveLength(300_000);
+    });
+
+    it('getValue() should evaluate linear expressions', async () => {
+      const model = new Model();
+      const x = model.numVar(0, 10, 'x');
+      const y = model.numVar(0, 10, 'y');
+      const other = new Model().numVar(0, 10, 'other');
+
+      model.addConstraint(x.plus(y).leq(10));
+      model.maximize(x.plus(y.times(2)));
+
+      const solution = await model.solve();
+
+      expect(solution.status).toBe('optimal');
+      expect(solution.getValue(x.plus(y.times(2)).plus(1))).toBeCloseTo(21, 5);
+      expect(solution.getValue(sum(x, y, -3))).toBeCloseTo(7, 5);
+      expect(solution.getValue(x.plus(other))).toBeUndefined();
+    });
+
   });
 
   describe('print', () => {

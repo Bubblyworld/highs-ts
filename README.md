@@ -106,7 +106,7 @@ console.log(solution.getValue(y)); // 10
 
 Variable and constraint names can be any whitespace-free string. `solve()` hands the model to the solver in MPS format, which — unlike the LP grammar — reserves no characters, so names like `item-cost` or `x[1,2]` are fine. To inspect a model yourself, `model.print()` returns CPLEX LP text and `model.print('mps')` returns MPS.
 
-Expressions support chained arithmetic: `plus()`, `minus()`, `times()`, `neg()`. Constraints are created with `leq()`, `geq()`, and `eq()`. The `sum()` helper combines multiple terms. You can mix and match different kinds of variables and constraints as you like:
+Expressions support chained arithmetic: `plus()`, `minus()`, `times()`, `neg()`. Constraints are created with `leq()`, `geq()`, and `eq()`. The `sum()` helper combines multiple terms, either spread as arguments or passed as a single array (prefer the array form for very large collections), and `solution.getValue()` evaluates a variable or any linear expression against the solution. You can mix and match different kinds of variables and constraints as you like:
 
 ```typescript
 const model = new Model();

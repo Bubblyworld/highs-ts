@@ -9,4 +9,4 @@ export {
   Solution,
   sum,
 } from './model/index.js';
-export type { VarType, Sense, Term, ModelFormat } from './model/index.js';
+export type { VarType, Sense, Term, ModelFormat, Summand } from './model/index.js';
