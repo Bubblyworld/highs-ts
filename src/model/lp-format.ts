@@ -1,10 +1,11 @@
-import type { Var } from './var.js';
-import type { LinExpr } from './expr.js';
-import type { Constraint } from './constraint.js';
+import type { Var } from "./var.js";
+import type { LinExpr } from "./expr.js";
+import type { Constraint } from "./constraint.js";
+import { EPS } from "./mps-format.js";
 
 export interface LPFormatInput {
   objective: LinExpr | null;
-  sense: 'minimize' | 'maximize';
+  sense: "minimize" | "maximize";
   constraints: Constraint[];
   variables: Var[];
 }
@@ -12,24 +13,24 @@ export interface LPFormatInput {
 export function toLPFormat(input: LPFormatInput): string {
   const lines: string[] = [];
 
-  if (input.sense === 'maximize') {
-    lines.push('Maximize');
+  if (input.sense === "maximize") {
+    lines.push("Maximize");
   } else {
-    lines.push('Minimize');
+    lines.push("Minimize");
   }
 
   if (input.objective) {
     lines.push(`  obj: ${formatExpr(input.objective)}`);
   } else {
-    lines.push('  obj: 0');
+    lines.push("  obj: 0");
   }
 
-  lines.push('Subject To');
+  lines.push("Subject To");
   let constraintIndex = 0;
   for (const constraint of input.constraints) {
     const name = constraint.name ?? `c${constraintIndex++}`;
-    const exprStr = formatExpr(constraint.expr);
-    const senseStr = constraint.sense === '=' ? '=' : constraint.sense;
+    const exprStr = formatExpr(constraint.expr, EPS);
+    const senseStr = constraint.sense === "=" ? "=" : constraint.sense;
     const rhs = constraint.rhs - constraint.expr.constant;
     lines.push(`  ${name}: ${exprStr} ${senseStr} ${formatNumber(rhs)}`);
   }
@@ -39,10 +40,10 @@ export function toLPFormat(input: LPFormatInput): string {
   const binaryVars: string[] = [];
 
   for (const v of input.variables) {
-    if (v.type === 'binary') {
+    if (v.type === "binary") {
       binaryVars.push(v.name);
     } else {
-      if (v.type === 'integer') {
+      if (v.type === "integer") {
         generalVars.push(v.name);
       }
       const hasNonDefaultBounds = v.lb !== 0 || v.ub !== Infinity;
@@ -50,35 +51,37 @@ export function toLPFormat(input: LPFormatInput): string {
         if (v.ub === Infinity) {
           boundsLines.push(`  ${formatNumber(v.lb)} <= ${v.name}`);
         } else {
-          boundsLines.push(`  ${formatNumber(v.lb)} <= ${v.name} <= ${formatNumber(v.ub)}`);
+          boundsLines.push(
+            `  ${formatNumber(v.lb)} <= ${v.name} <= ${formatNumber(v.ub)}`,
+          );
         }
       }
     }
   }
 
   if (boundsLines.length > 0) {
-    lines.push('Bounds');
+    lines.push("Bounds");
     lines.push(...boundsLines);
   }
 
   if (generalVars.length > 0) {
-    lines.push('General');
-    lines.push(`  ${generalVars.join(' ')}`);
+    lines.push("General");
+    lines.push(`  ${generalVars.join(" ")}`);
   }
 
   if (binaryVars.length > 0) {
-    lines.push('Binary');
-    lines.push(`  ${binaryVars.join(' ')}`);
+    lines.push("Binary");
+    lines.push(`  ${binaryVars.join(" ")}`);
   }
 
-  lines.push('End');
-  return lines.join('\n') + '\n';
+  lines.push("End");
+  return lines.join("\n") + "\n";
 }
 
-function formatExpr(expr: LinExpr): string {
-  const consolidated = consolidateTerms(expr);
+function formatExpr(expr: LinExpr, threshold = 0): string {
+  const consolidated = consolidateTerms(expr, threshold);
   if (consolidated.length === 0) {
-    return '0';
+    return "0";
   }
 
   const parts: string[] = [];
@@ -109,10 +112,13 @@ function formatExpr(expr: LinExpr): string {
     }
   }
 
-  return parts.join(' ') || '0';
+  return parts.join(" ") || "0";
 }
 
-function consolidateTerms(expr: LinExpr): { coeff: number; varName: string }[] {
+function consolidateTerms(
+  expr: LinExpr,
+  threshold = 0,
+): { coeff: number; varName: string }[] {
   const coeffMap = new Map<string, number>();
   for (const term of expr.terms) {
     const current = coeffMap.get(term.var.name) ?? 0;
@@ -120,7 +126,7 @@ function consolidateTerms(expr: LinExpr): { coeff: number; varName: string }[] {
   }
   const result: { coeff: number; varName: string }[] = [];
   for (const [varName, coeff] of coeffMap) {
-    if (coeff !== 0) {
+    if (coeff !== 0 && Math.abs(coeff) > threshold) {
       result.push({ coeff, varName });
     }
   }

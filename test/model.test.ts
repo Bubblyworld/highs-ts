@@ -306,6 +306,41 @@ describe('Model', () => {
     });
   });
 
+  describe('negligible coefficients', () => {
+    it('should solve a constraint carrying floating point residue', async () => {
+      const model = new Model();
+      const x = model.numVar(0, undefined, 'x');
+      const y = model.numVar(0, undefined, 'y');
+
+      model.addConstraint(x.plus(y).leq(1), 'c1');
+      model.addConstraint(x.times(-1).plus(y.times(1e-19)).geq(-0.5), 'c2');
+      model.maximize(x.plus(y.times(0.5)));
+
+      const solution = await model.solve();
+
+      expect(solution.status).toBe('optimal');
+      expect(solution.getValue(x)).toBeCloseTo(0.5, 5);
+      expect(solution.getValue(y)).toBeCloseTo(0.5, 5);
+    });
+
+    it('should leave residue out of constraint rows but keep it in the objective', () => {
+      const model = new Model();
+      const x = model.numVar(0, undefined, 'x');
+      const y = model.numVar(0, undefined, 'y');
+
+      model.addConstraint(x.plus(y.times(1e-19)).leq(1), 'c1');
+      model.maximize(x.plus(y.times(1e-19)));
+
+      const mps = model.print('mps');
+      const lp = model.print('lp');
+
+      expect(mps).not.toContain('y  c1');
+      expect(mps).toContain('y  obj  1e-19');
+      expect(lp).toContain('c1: x <= 1');
+      expect(lp).toContain('obj: x + 1e-19 y');
+    });
+  });
+
   describe('auto-generated names', () => {
     it('should auto-generate variable names', async () => {
       const model = new Model();
